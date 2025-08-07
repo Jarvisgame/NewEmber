@@ -49,8 +49,8 @@ def ngram_to_rgb_image(ngram_dict, image_size=256):
     return rgb_array
 
 
-def process_file_rgb(file_path, output_dir, image_size=256):
-    """处理单个文件并生成RGB图像"""
+def process_file_rgb(file_path, input_dir, output_dir, image_size=256):
+    """处理单个文件并生成RGB图像，保持子目录结构"""
     try:
         with open(file_path, "rb") as f:
             data = bytearray(f.read())
@@ -59,9 +59,14 @@ def process_file_rgb(file_path, output_dir, image_size=256):
         ngram_dict = generate_three_3grams(data)
         rgb_img = ngram_to_rgb_image(ngram_dict, image_size=image_size)
 
-        # 保存图像
+        # 构建输出路径，保持目录结构
+        rel_path = os.path.relpath(file_path, input_dir)
+        rel_dir = os.path.dirname(rel_path)
+        output_subdir = os.path.join(output_dir, rel_dir)
+        os.makedirs(output_subdir, exist_ok=True)
+
+        output_path = os.path.join(output_subdir, os.path.basename(file_path) + ".png")
         img = Image.fromarray(rgb_img, mode="RGB")
-        output_path = os.path.join(output_dir, os.path.basename(file_path) + ".png")
         img.save(output_path)
         print(f"Saved RGB image: {output_path}")
         return True
@@ -71,16 +76,16 @@ def process_file_rgb(file_path, output_dir, image_size=256):
 
 
 def process_files_rgb_parallel(input_dir, output_dir, image_size=256, max_workers=4):
-    """并行处理所有文件为RGB图像"""
-    file_paths = [
-        os.path.join(input_dir, f)
-        for f in os.listdir(input_dir)
-        if os.path.isfile(os.path.join(input_dir, f))
-    ]
+    """并行处理 input_dir 下所有子目录中的文件，输出到对应的 output_dir 子目录中"""
+    file_paths = []
+    for root, dirs, files in os.walk(input_dir):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_paths.append(file_path)
 
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = [
-            executor.submit(process_file_rgb, fp, output_dir, image_size)
+            executor.submit(process_file_rgb, fp, input_dir, output_dir, image_size)
             for fp in file_paths
         ]
         _ = [f.result() for f in futures]
