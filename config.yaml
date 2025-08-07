@@ -1,0 +1,12 @@
+# 数据处理相关
+path: 
+  data_dir: ./data #总数据目录
+  output_dir: ./output #输出目录
+  binary_files_dir: ./data/binary_files #二进制文件目录(用于3字节图像处理、字节直方图、字节熵直方图、PE静态文件结构特征提取、汇编码特征提取、函数调用关系图谱、字符串特征提取)
+
+three_gram_byte_plot:
+  input_dir: ./data/binary_files #输入目录
+  output_dir: ./output/three_gram_byte_plot #输出目录
+  image_size: 256 #图像大小
+  
+ 
