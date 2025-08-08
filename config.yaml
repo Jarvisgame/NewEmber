@@ -16,3 +16,7 @@ decision_tree_classifier:
 random_forest_classifier:
   input_dir: ./output/three_gram_byte_plot #输入目录
   output_dir: ./output/model/rf_model # 模型输出目录
+
+svm_classifier:
+  input_dir: ./output/three_gram_byte_plot #输入目录
+  output_dir: ./output/model/svm_model # 模型输出目录
