@@ -7,7 +7,7 @@ path:
 three_gram_byte_plot:
   input_dir: ./data/binary_files #输入目录
   output_dir: ./output/three_gram_byte_plot #输出目录
-  image_size: 256 #图像大小
+  image_size: 128 #图像大小
 
 decision_tree_classifier:
   input_dir: ./output/three_gram_byte_plot #输入目录

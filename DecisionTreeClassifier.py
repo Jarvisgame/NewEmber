@@ -37,4 +37,4 @@ print(confusion_matrix(y_test, y_pred))
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred, target_names=['Benign', 'Malware']))
 
-Utils.notice_bark('决策树训练完毕！')
+Utils.notice_bark('决策树模型训练完毕！')

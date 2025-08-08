@@ -40,4 +40,4 @@ print(confusion_matrix(y_test, y_pred, labels=[0, 1]))
 print("\n[Classification Report]")
 print(classification_report(y_test, y_pred, labels=[0, 1], target_names=["Benign", "Malware"]))
 
-Utils.notice_bark('随机森林训练完毕！')
+Utils.notice_bark('随机森林模型训练完毕！')
