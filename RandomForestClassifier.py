@@ -15,25 +15,8 @@ output_dir = config['random_forest_classifier']['output_dir']
 Utils.check_directory_exists(output_dir)
 model_path = os.path.join(output_dir, 'rf_model.pkl')  # 训练模型保存路径
 
-def load_images_and_labels(image_dir):
-    X = []
-    y = []
-    for root, dirs, files in os.walk(image_dir):
-        for file in files:
-            if file.lower().endswith('.png'):
-                full_path = os.path.join(root, file)
-                img = Image.open(full_path).convert('RGB')
-                img = img.resize((image_size, image_size))  # 确保大小一致
-                img_array = np.array(img, dtype=np.uint8).flatten()  # 展平为一维向量
-                X.append(img_array)
-
-                # 判断是否为恶意软件（VirusShare开头）
-                label = 1 if 'VirusShare' in root else 0
-                y.append(label)
-    return np.array(X), np.array(y)
-
 # === 加载数据集 ===
-X, y = load_images_and_labels(image_dir)
+X, y = Utils.load_images_and_labels(image_dir)
 
 # === 数据划分 ===
 X_train, X_test, y_train, y_test = train_test_split(
@@ -57,4 +40,4 @@ print(confusion_matrix(y_test, y_pred, labels=[0, 1]))
 print("\n[Classification Report]")
 print(classification_report(y_test, y_pred, labels=[0, 1], target_names=["Benign", "Malware"]))
 
-Utils.notice_bark('决策树训练完毕！')
+Utils.notice_bark('随机森林训练完毕！')

@@ -1,6 +1,4 @@
 import os
-import numpy as np
-from PIL import Image
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
@@ -15,30 +13,8 @@ output_dir = config['decision_tree_classifier']['output_dir']
 Utils.check_directory_exists(output_dir)
 model_path = os.path.join(output_dir, 'dt_model.pkl')  # 训练模型保存路径
 
-def load_images_and_labels(image_dir):
-    X = []
-    y = []
-
-    for root, dirs, files in os.walk(image_dir):
-        for file in files:
-            if file.lower().endswith('.png'):
-                full_path = os.path.join(root, file)
-
-                # 加载图像为RGB并展平
-                img = Image.open(full_path).convert('RGB')
-                img = img.resize((image_size, image_size))  # 保证尺寸一致
-                img_array = np.array(img, dtype=np.uint8).flatten()
-
-                X.append(img_array)
-
-                # 标签判断：路径中是否包含 'VirusShare'
-                label = 1 if 'VirusShare' in root else 0
-                y.append(label)
-    
-    return np.array(X), np.array(y)
-
 # 1. 加载数据
-X, y = load_images_and_labels(image_dir)
+X, y = Utils.load_images_and_labels(image_dir)
 
 # 2. 划分训练和测试集
 X_train, X_test, y_train, y_test = train_test_split(

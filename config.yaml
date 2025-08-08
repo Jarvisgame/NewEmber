@@ -20,3 +20,7 @@ random_forest_classifier:
 svm_classifier:
   input_dir: ./output/three_gram_byte_plot #输入目录
   output_dir: ./output/model/svm_model # 模型输出目录
+
+mlp_classifier:
+  input_dir: ./output/three_gram_byte_plot #输入目录
+  output_dir: ./output/model/mlp_model # 模型输出目录

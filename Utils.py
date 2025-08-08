@@ -2,6 +2,34 @@ import requests
 import dotenv
 import os
 import yaml
+import numpy as np
+from PIL import Image
+
+def load_images_and_labels(image_dir):
+
+    config = load_config()
+    image_size = config['three_gram_byte_plot']['image_size']
+    
+    X = []
+    y = []
+
+    for root, dirs, files in os.walk(image_dir):
+        for file in files:
+            if file.lower().endswith('.png'):
+                full_path = os.path.join(root, file)
+
+                # 加载图像为RGB并展平
+                img = Image.open(full_path).convert('RGB')
+                img = img.resize((image_size, image_size))  # 保证尺寸一致
+                img_array = np.array(img, dtype=np.uint8).flatten()
+
+                X.append(img_array)
+
+                # 标签判断：路径中是否包含 'VirusShare'
+                label = 1 if 'VirusShare' in root else 0
+                y.append(label)
+    
+    return np.array(X), np.array(y)
 
 def load_config():
     """加载配置文件"""
