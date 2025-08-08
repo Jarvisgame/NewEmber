@@ -11,7 +11,7 @@ image_dir = config['three_gram_byte_plot']['output_dir']
 image_size = config['three_gram_byte_plot']['image_size']
 output_dir = config['mlp_classifier']['output_dir']
 Utils.check_directory_exists(output_dir)
-model_path = os.path.join(image_dir, 'mlp_model.pkl')  # 模型保存路径
+model_path = os.path.join(output_dir, 'mlp_model.pkl')  # 模型保存路径
 
 # === 加载数据 ===
 X, y = Utils.load_images_and_labels(image_dir)
