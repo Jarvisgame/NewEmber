@@ -32,3 +32,9 @@ cnn_classifier:
   epochs: 10 # 训练轮数
   lr: 0.001 # 学习率
   seed: 42 # 随机种子
+
+ensemble_classifier:
+  input_dir: ./output/three_gram_byte_plot
+  output_dir: ./output/model/ensemble_model
+  test_size: 0.2
+  random_state: 42
