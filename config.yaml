@@ -9,6 +9,10 @@ three_gram_byte_plot:
   output_dir: ./output/three_gram_byte_plot #输出目录
   image_size: 128 #图像大小
 
+pe_static_features:
+  input_dir: ./data/binary_files #输入目录
+  output_dir: ./output/pe_static_features #输出目录
+
 decision_tree_classifier:
   input_dir: ./output/three_gram_byte_plot #输入目录
   output_dir: ./output/model/dt_model # 模型输出目录
