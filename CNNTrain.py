@@ -299,6 +299,7 @@ def predict_image(image_path: str,
 
 if __name__ == "__main__":
     main()
+    Utils.notice_bark('CNN模型训练完毕！')
     # # 示例：训练后进行单图预测（可取消注释使用）
     # test_img = r"D:\NotFatDog\Project\GeneratedRGBImages\Test\unknown.png"
     # predict_image(test_img, BEST_MODEL_PATH, IMAGE_SIZE)
