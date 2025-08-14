@@ -73,3 +73,22 @@ def notice_bark(message):
             print(f"Failed to send notification: {response.status_code}")
     except requests.RequestException as e:
         print(f"Error sending notification: {e}")
+
+def notice_ntfy(message):
+    """使用 ntfy API 发送通知"""
+    dotenv.load_dotenv()  # Load environment variables from .env file
+    url = os.getenv("NTFY_URL")
+    if not url:
+        print("No NTFY URL found in .env file. Cannot send notification.")
+        return
+    print(f"Sending notification to {url} with message: {message}")
+    try:
+        response = requests.post(url, data=message.encode(encoding='utf-8'))
+        if response.status_code == 200:
+            print("Notification sent successfully.")
+        else:
+            print(f"Failed to send notification: {response.status_code}")
+    except requests.RequestException as e:
+        print(f"Error sending notification: {e}")
+
+        # 
