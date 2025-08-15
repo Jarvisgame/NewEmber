@@ -30,6 +30,23 @@ random_forest_classifier:
   input_dir: ./output/three_gram_byte_plot #输入目录
   output_dir: ./output/model/rf_model # 模型输出目录
 
+random_forest_classifier_jsonl:
+  # 作为训练集的 JSONL 根目录（建议指向你 pe_metadata 的输出目录）
+  input_dir: ./output/pe_static_features/pe_metadata
+
+  # 模型输出目录
+  output_dir: ./output/model/rf_model_jsonl
+
+  # 数据划分与随机种子
+  test_size: 0.2
+  random_state: 42
+
+  # 随机森林超参数（可按需调整）
+  n_estimators: 300
+  max_depth:
+  n_jobs: -1
+  class_weight: balanced_subsample  # 类不平衡更稳
+
 svm_classifier:
   input_dir: ./output/three_gram_byte_plot #输入目录
   output_dir: ./output/model/svm_model # 模型输出目录
