@@ -55,6 +55,18 @@ mlp_classifier:
   input_dir: ./output/three_gram_byte_plot #输入目录
   output_dir: ./output/model/mlp_model # 模型输出目录
 
+mlp_classifier_jsonl:
+  input_dir: ./output/pe_static_features/pe_metadata
+  output_dir: ./output/model/mlp_model_jsonl
+  test_size: 0.2
+  random_state: 42
+  hidden_layer_sizes: [256, 128]
+  max_iter: 200
+  alpha: 0.0001
+  early_stopping: true
+  validation_fraction: 0.1
+  learning_rate: adaptive
+
 cnn_classifier:
   input_dir: ./output/three_gram_byte_plot # 输入目录
   output_dir: ./output/model/cnn_model # 模型输出目录
@@ -68,3 +80,28 @@ ensemble_classifier:
   output_dir: ./output/model/ensemble_model
   test_size: 0.2
   random_state: 42
+
+ensemble_classifier_jsonl:
+  input_dir: ./output/pe_static_features/pe_metadata
+  output_dir: ./output/model/ensemble_model_jsonl
+  test_size: 0.2
+  random_state: 42
+
+  rf:
+    n_estimators: 300
+    max_depth:
+    n_jobs: -1
+    class_weight: balanced_subsample
+
+  svm:
+    C: 1.0
+    max_iter: 2000
+    class_weight: balanced
+
+  mlp:
+    hidden_layer_sizes: [256, 128]
+    max_iter: 200
+    alpha: 0.0001
+    early_stopping: true
+    validation_fraction: 0.1
+    learning_rate: adaptive
