@@ -51,6 +51,22 @@ svm_classifier:
   input_dir: ./output/three_gram_byte_plot #输入目录
   output_dir: ./output/model/svm_model # 模型输出目录
 
+svm_classifier_jsonl:
+  # 作为训练集的 JSONL 根目录（指向 pe_metadata 输出目录）
+  input_dir: ./output/pe_static_features/pe_metadata
+
+  # 模型输出目录
+  output_dir: ./output/model/svm_model_jsonl
+
+  # 数据划分与随机种子
+  test_size: 0.2
+  random_state: 42
+
+  # SVM 超参数
+  C: 1.0
+  max_iter: 2000
+  class_weight: balanced
+
 mlp_classifier:
   input_dir: ./output/three_gram_byte_plot #输入目录
   output_dir: ./output/model/mlp_model # 模型输出目录
@@ -74,6 +90,16 @@ cnn_classifier:
   epochs: 10 # 训练轮数
   lr: 0.001 # 学习率
   seed: 42 # 随机种子
+
+cnn_classifier_jsonl:
+  input_dir: ./output/pe_static_features/pe_metadata
+  output_dir: ./output/model/cnn_model_jsonl
+  batch_size: 64
+  epochs: 20
+  lr: 0.001
+  test_size: 0.2
+  random_state: 42
+  num_workers: 4
 
 ensemble_classifier:
   input_dir: ./output/three_gram_byte_plot
