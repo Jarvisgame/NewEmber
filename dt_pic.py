@@ -50,4 +50,4 @@ print("Confusion Matrix:\n", confusion_matrix(yte_mm, y_pred))
 print("\nClassification Report:\n", classification_report(yte_mm, y_pred, target_names=['Benign','Malware']))
 
 
-Utils.notice_bark('彩色图像-决策树模型训练完毕！')
+Utils.notice_bark('决策树模型（彩色图像）训练完毕！')
