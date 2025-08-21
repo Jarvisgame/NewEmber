@@ -35,7 +35,7 @@ Xte_mm, yte_mm = Utils.build_memmap(te_paths, te_labels, image_size,
                               dtype=np.uint8, batch_size=1024)
 
 # 3. 初始化决策树并训练
-clf = DecisionTreeClassifier(random_state)
+clf = DecisionTreeClassifier(random_state=random_state)
 clf.fit(Xtr_mm, ytr_mm)
 
 # 4. 保存模型
