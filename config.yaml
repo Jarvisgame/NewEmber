@@ -17,14 +17,13 @@ pe_static_features:
   output_dir: ./output/pe_static_features #输出目录
 
 decision_tree_classifier:
-  input_dir: ./output/three_gram_byte_plot #输入目录
-  output_dir: ./output/model/dt_model # 模型输出目录
-
-decision_tree_classifier_jsonl:
-  input_dir: ./output/pe_static_features/pe_metadata #输入目录
-  output_dir: ./output/model/dt_model_jsonl # 模型输出目录
+  pic_input_dir: ./output/three_gram_byte_plot #输入目录
+  pic_output_dir: ./output/model/dt_model # 模型输出目录
+  jsonl_input_dir: ./output/pe_static_features/pe_metadata #输入目录
+  jsonl_output_dir: ./output/model/dt_model_jsonl # 模型输出目录
   test_size: 0.2 # 测试集比例
   random_state: 42 # 随机种子
+
   
 random_forest_classifier:
   input_dir: ./output/three_gram_byte_plot #输入目录
