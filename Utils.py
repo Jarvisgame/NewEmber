@@ -7,6 +7,7 @@ import yaml
 import numpy as np
 from PIL import Image
 from typing import List, Dict, Any, Tuple
+from sklearn.model_selection import train_test_split
 
 def feature_names() -> List[str]:
     names = []
@@ -174,6 +175,71 @@ def build_memmap(paths, labels, image_size, out_X_path, out_y_path, dtype=np.uin
     X_mm = np.memmap(out_X_path, mode='r', dtype=dtype, shape=(N, D))
     y_mm = np.memmap(out_y_path, mode='r', dtype=np.int64, shape=(N,))
     return X_mm, y_mm
+
+def load_or_build_memmap(paths, labels, image_size: int,
+                         out_X_path: str, out_y_path: str,
+                         dtype=np.uint8, batch_size: int = 1024):
+    """
+    如果指定 memmap 文件已存在 → 直接加载
+    否则 → 调用 build_memmap 构建后再加载
+    """
+    N = len(labels)
+    D = 3 * image_size * image_size
+
+    if os.path.exists(out_X_path) and os.path.exists(out_y_path):
+        print(f"[✔] 检测到已有 memmap 文件，直接加载：\n{out_X_path}\n{out_y_path}")
+        X_mm = np.memmap(out_X_path, mode='r', dtype=dtype,    shape=(N, D))
+        y_mm = np.memmap(out_y_path, mode='r', dtype=np.int64, shape=(N,))
+        return X_mm, y_mm
+
+    print(f"[ℹ] 未检测到 memmap 文件，开始构建：\n{out_X_path}\n{out_y_path}")
+    return build_memmap(paths, labels, image_size,
+                        out_X_path=out_X_path,
+                        out_y_path=out_y_path,
+                        dtype=dtype,
+                        batch_size=batch_size)
+
+def load_or_build_index_split(image_dir: str, test_size: float, random_state: int, output_dir: str):
+    """
+    若 output_dir 下已存在索引与划分文件（.npy）→ 直接加载；
+    否则：调用 index_images 建立索引并做划分，然后保存。
+    返回: tr_paths, te_paths, tr_labels, te_labels
+    """
+    train_paths_file  = os.path.join(output_dir, "train_paths.npy")
+    test_paths_file   = os.path.join(output_dir, "test_paths.npy")
+    train_labels_file = os.path.join(output_dir, "train_labels.npy")
+    test_labels_file  = os.path.join(output_dir, "test_labels.npy")
+
+    ready = all(os.path.exists(f) for f in
+                [train_paths_file, test_paths_file, train_labels_file, test_labels_file])
+
+    if ready:
+        print("[✔] 检测到已有索引与划分文件，直接加载")
+        tr_paths  = np.load(train_paths_file,  allow_pickle=True)
+        te_paths  = np.load(test_paths_file,   allow_pickle=True)
+        tr_labels = np.load(train_labels_file, allow_pickle=True)
+        te_labels = np.load(test_labels_file,  allow_pickle=True)
+        # 基本一致性检查（可选）
+        assert len(tr_paths) == len(tr_labels), "train paths/labels 长度不一致"
+        assert len(te_paths) == len(te_labels), "test  paths/labels 长度不一致"
+        return tr_paths, te_paths, tr_labels, te_labels
+
+    print("[ℹ] 未检测到索引文件，开始重新建立索引与划分...")
+    all_paths, all_labels = index_images(image_dir)
+    tr_paths, te_paths, tr_labels, te_labels = train_test_split(
+        all_paths, all_labels,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=all_labels
+    )
+
+    # 保存
+    np.save(train_paths_file,  tr_paths)
+    np.save(test_paths_file,   te_paths)
+    np.save(train_labels_file, tr_labels)
+    np.save(test_labels_file,  te_labels)
+    print(f"[✔] 已保存索引与划分文件至 {output_dir}")
+    return tr_paths, te_paths, tr_labels, te_labels
 
 def load_config():
     """加载配置文件"""

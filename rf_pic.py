@@ -7,20 +7,23 @@ from sklearn.metrics import classification_report, confusion_matrix
 import joblib
 import Utils  # 你已有的配置模块
 
-# === 加载配置 ===
+# 加载配置
 config = Utils.load_config()
-image_dir = config['random_forest_classifier']['input_dir']
+image_dir = config['random_forest_classifier']['pic_input_dir']
+Utils.check_directory_exists(image_dir)
 image_size = config['three_gram_byte_plot']['image_size']  # 图像大小为 image_size × image_size × 3
-output_dir = config['random_forest_classifier']['output_dir']
+output_dir = config['random_forest_classifier']['pic_output_dir']
 Utils.check_directory_exists(output_dir)
 model_path = os.path.join(output_dir, 'rf_model.pkl')  # 训练模型保存路径
+test_size = config['random_forest_classifier']['test_size']
+random_state = config['random_forest_classifier']['random_state']
 
-# === 加载数据集 ===
+# 1. 加载图像数据集
 X, y = Utils.load_images_and_labels(image_dir)
 
-# === 数据划分 ===
+# 2. 划分训练集与测试集
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
+    X, y, test_size=test_size, random_state=random_state, stratify=y
 )
 
 # === 模型训练 ===

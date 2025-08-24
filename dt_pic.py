@@ -19,20 +19,27 @@ test_size = config['decision_tree_classifier']['test_size']
 random_state = config['decision_tree_classifier']['random_state']
 
 # 1. 建索引 + 划分
-all_paths, all_labels = Utils.index_images(image_dir)
-tr_paths, te_paths, tr_labels, te_labels = train_test_split(
-    all_paths, all_labels, test_size=test_size, random_state=random_state, stratify=all_labels
+tr_paths, te_paths, tr_labels, te_labels = Utils.load_or_build_index_split(
+    image_dir=image_dir,
+    test_size=test_size,
+    random_state=random_state,
+    output_dir=output_dir
 )
 
 # 2. 为训练集与测试集分别构建memmap（避免一次性像素进内存）
-Xtr_mm, ytr_mm = Utils.build_memmap(tr_paths, tr_labels, image_size,
-                              out_X_path=os.path.join(output_dir, 'X_train.mmap'),
-                              out_y_path=os.path.join(output_dir, 'y_train.mmap'),
-                              dtype=np.uint8, batch_size=1024)
-Xte_mm, yte_mm = Utils.build_memmap(te_paths, te_labels, image_size,
-                              out_X_path=os.path.join(output_dir, 'X_test.mmap'),
-                              out_y_path=os.path.join(output_dir, 'y_test.mmap'),
-                              dtype=np.uint8, batch_size=1024)
+Xtr_mm, ytr_mm = Utils.load_or_build_memmap(
+    paths=tr_paths, labels=tr_labels, image_size=image_size,
+    out_X_path=os.path.join(output_dir, 'X_train.mmap'),
+    out_y_path=os.path.join(output_dir, 'y_train.mmap'),
+    dtype=np.uint8, batch_size=1024
+)
+
+Xte_mm, yte_mm = Utils.load_or_build_memmap(
+    paths=te_paths, labels=te_labels, image_size=image_size,
+    out_X_path=os.path.join(output_dir, 'X_test.mmap'),
+    out_y_path=os.path.join(output_dir, 'y_test.mmap'),
+    dtype=np.uint8, batch_size=1024
+)
 
 # 3. 初始化决策树并训练
 clf = DecisionTreeClassifier(random_state=random_state)
