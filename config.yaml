@@ -71,16 +71,14 @@ mlp_classifier:
   learning_rate: adaptive
 
 cnn_classifier:
-  input_dir: ./output/three_gram_byte_plot # 输入目录
-  output_dir: ./output/model/cnn_model # 模型输出目录
+  pic_input_dir: ./output/three_gram_byte_plot # 输入目录
+  pic_output_dir: ./output/model/cnn_model # 模型输出目录
   batch_size: 16 # 批处理大小
   epochs: 10 # 训练轮数
   lr: 0.001 # 学习率
   seed: 42 # 随机种子
-
-cnn_classifier_jsonl:
-  input_dir: ./output/pe_static_features/pe_metadata
-  output_dir: ./output/model/cnn_model_jsonl
+  jsonl_input_dir: ./output/pe_static_features/pe_metadata
+  jsonl_output_dir: ./output/model/cnn_model_jsonl
   batch_size: 64
   epochs: 20
   lr: 0.001
@@ -89,17 +87,13 @@ cnn_classifier_jsonl:
   num_workers: 4
 
 ensemble_classifier:
-  input_dir: ./output/three_gram_byte_plot
-  output_dir: ./output/model/ensemble_model
+  pic_input_dir: ./output/three_gram_byte_plot
+  pic_output_dir: ./output/model/ensemble_model
   test_size: 0.2
   random_state: 42
-
-ensemble_classifier_jsonl:
-  input_dir: ./output/pe_static_features/pe_metadata
-  output_dir: ./output/model/ensemble_model_jsonl
-  test_size: 0.2
-  random_state: 42
-
+  jsonl_input_dir: ./output/pe_static_features/pe_metadata
+  jsonl_output_dir: ./output/model/ensemble_model_jsonl
+  
   rf:
     n_estimators: 300
     max_depth:
@@ -117,4 +111,4 @@ ensemble_classifier_jsonl:
     alpha: 0.0001
     early_stopping: true
     validation_fraction: 0.1
-    learning_rate: adaptive
+    learning_rate: adaptive  

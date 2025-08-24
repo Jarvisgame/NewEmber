@@ -67,4 +67,4 @@ print(confusion_matrix(yte_mm, y_pred, labels=[0, 1]))
 print("\n[Classification Report]")
 print(classification_report(yte_mm, y_pred, labels=[0, 1], target_names=["Benign", "Malware"]))
 
-Utils.notice_bark('多层感知机模型训练完毕！')
+Utils.notice_bark('多层感知机模型（彩色图像）训练完毕！')
