@@ -57,12 +57,10 @@ svm_classifier:
   kernel: linear
 
 mlp_classifier:
-  input_dir: ./output/three_gram_byte_plot #输入目录
-  output_dir: ./output/model/mlp_model # 模型输出目录
-
-mlp_classifier_jsonl:
-  input_dir: ./output/pe_static_features/pe_metadata
-  output_dir: ./output/model/mlp_model_jsonl
+  pic_input_dir: ./output/three_gram_byte_plot #输入目录
+  pic_output_dir: ./output/model/mlp_model # 模型输出目录
+  jsonl_input_dir: ./output/pe_static_features/pe_metadata
+  jsonl_output_dir: ./output/model/mlp_model_jsonl
   test_size: 0.2
   random_state: 42
   hidden_layer_sizes: [256, 128]
