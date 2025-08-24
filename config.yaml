@@ -39,27 +39,22 @@ random_forest_classifier:
   n_estimators: 300
   max_depth:
   n_jobs: -1
-  class_weight: balanced_subsample  # 类不平衡更稳
 
 svm_classifier:
-  input_dir: ./output/three_gram_byte_plot #输入目录
-  output_dir: ./output/model/svm_model # 模型输出目录
-
-svm_classifier_jsonl:
+  pic_input_dir: ./output/three_gram_byte_plot #输入目录
+  pic_output_dir: ./output/model/svm_model # 模型输出目录
   # 作为训练集的 JSONL 根目录（指向 pe_metadata 输出目录）
-  input_dir: ./output/pe_static_features/pe_metadata
-
+  jsonl_input_dir: ./output/pe_static_features/pe_metadata
   # 模型输出目录
-  output_dir: ./output/model/svm_model_jsonl
-
+  jsonl_output_dir: ./output/model/svm_model_jsonl
   # 数据划分与随机种子
   test_size: 0.2
   random_state: 42
-
   # SVM 超参数
   C: 1.0
   max_iter: 2000
   class_weight: balanced
+  kernel: linear
 
 mlp_classifier:
   input_dir: ./output/three_gram_byte_plot #输入目录

@@ -1,8 +1,6 @@
 import os
 import numpy as np
-from PIL import Image
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 import joblib
 import Utils  # 配置加载模块
@@ -47,14 +45,12 @@ clf.fit(Xtr_mm, ytr_mm)
 
 # 4. 保存模型
 joblib.dump(clf, model_path)
-print(f"模型已保存至: {model_path}")
-
+print(f"[✔] 模型已保存至: {model_path}")
 
 # 5. 预测并评估
 y_pred = clf.predict(Xte_mm)
 
 print("Confusion Matrix:\n", confusion_matrix(yte_mm, y_pred))
 print("\nClassification Report:\n", classification_report(yte_mm, y_pred, target_names=['Benign','Malware']))
-
 
 Utils.notice_bark('决策树模型（彩色图像）训练完毕！')
