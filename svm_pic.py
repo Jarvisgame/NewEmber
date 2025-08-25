@@ -6,7 +6,7 @@ import joblib
 import Utils
 
 def main():
-    
+
     # 加载配置
     config = Utils.load_config()
     image_dir = config['svm_classifier']['pic_input_dir']
@@ -59,4 +59,6 @@ def main():
     print("\n[Classification Report]")
     print(classification_report(yte_mm, y_pred, labels=[0, 1], target_names=["Benign", "Malware"]))
 
+if __name__ == "__main__":
+    main()
     Utils.notice_bark('支持向量机（彩色图像）训练完毕！')

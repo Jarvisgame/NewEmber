@@ -54,5 +54,7 @@ def main():
 
     print("Confusion Matrix:\n", confusion_matrix(yte_mm, y_pred))
     print("\nClassification Report:\n", classification_report(yte_mm, y_pred, target_names=['Benign','Malware']))
-
+    
+if __name__ == "__main__":
+    main()
     Utils.notice_bark('决策树模型（彩色图像）训练完毕！')

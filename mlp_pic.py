@@ -68,5 +68,7 @@ def main():
 
     print("\n[Classification Report]")
     print(classification_report(yte_mm, y_pred, labels=[0, 1], target_names=["Benign", "Malware"]))
-
+    
+if __name__ == "__main__":
+    main()
     Utils.notice_bark('多层感知机模型（彩色图像）训练完毕！')
