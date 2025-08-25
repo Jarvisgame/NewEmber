@@ -6,9 +6,9 @@ import cnn_pic
 import el_pic
 
 def main():
-    # dt_pic.main()
-    # rf_pic.main()
-    # svm_pic.main()
+    dt_pic.main()
+    rf_pic.main()
+    svm_pic.main()
     mlp_pic.main()
     cnn_pic.main()
     el_pic.main()

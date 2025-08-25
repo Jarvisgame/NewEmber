@@ -17,27 +17,28 @@ import joblib
 
 import Utils
 
+def main():
+    
+    # 配置与随机种子
+    config = Utils.load_config()
+    IMAGE_DIR   = config['cnn_classifier']['pic_input_dir']         # 彩色图像根目录
+    IMAGE_SIZE  = config['three_gram_byte_plot']['image_size']         # 例如 256
+    BATCH_SIZE  = config['cnn_classifier']['batch_size']
+    LR          = config['cnn_classifier']['lr']
+    EPOCHS      = config['cnn_classifier']['epochs']
+    MODEL_DIR   = config['cnn_classifier']['pic_output_dir']               # 模型输出目录
+    SEED        = config['cnn_classifier']['seed']
+    TEST_SIZE   = config['cnn_classifier'].get('test_size', 0.2)       # 若无则默认0.2
 
-# 配置与随机种子
-config = Utils.load_config()
-IMAGE_DIR   = config['cnn_classifier']['pic_input_dir']         # 彩色图像根目录
-IMAGE_SIZE  = config['three_gram_byte_plot']['image_size']         # 例如 256
-BATCH_SIZE  = config['cnn_classifier']['batch_size']
-LR          = config['cnn_classifier']['lr']
-EPOCHS      = config['cnn_classifier']['epochs']
-MODEL_DIR   = config['cnn_classifier']['pic_output_dir']               # 模型输出目录
-SEED        = config['cnn_classifier']['seed']
-TEST_SIZE   = config['cnn_classifier'].get('test_size', 0.2)       # 若无则默认0.2
+    Utils.check_directory_exists(MODEL_DIR)
+    BEST_MODEL_PATH = os.path.join(MODEL_DIR, "cnn_malware_best.pt")
+    LABEL_MAP_PATH  = os.path.join(MODEL_DIR, "label_map.pkl")         # 0=Benign,1=Malware
 
-Utils.check_directory_exists(MODEL_DIR)
-BEST_MODEL_PATH = os.path.join(MODEL_DIR, "cnn_malware_best.pt")
-LABEL_MAP_PATH  = os.path.join(MODEL_DIR, "label_map.pkl")         # 0=Benign,1=Malware
-
-random.seed(SEED)
-np.random.seed(SEED)
-torch.manual_seed(SEED)
-torch.cuda.manual_seed_all(SEED)
-torch.backends.cudnn.benchmark = True  # 提速（若要完全可复现可改为 False 并启用 deterministic）
+    random.seed(SEED)
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)
+    torch.backends.cudnn.benchmark = True  # 提速（若要完全可复现可改为 False 并启用 deterministic）
 
 
 
