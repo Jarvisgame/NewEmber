@@ -20,8 +20,8 @@ import Utils
 config = Utils.load_config()
 cfg = config.get('svm_classifier_jsonl', {})
 
-pe_meta_dir = cfg.get('input_dir')
-output_dir  = cfg.get('output_dir', './output/model/svm_model_jsonl')
+pe_meta_dir = cfg.get('jsonl_input_dir')
+output_dir  = cfg.get('jsonl_output_dir', './output/model/svm_model_jsonl')
 Utils.check_directory_exists(output_dir)
 
 model_path    = os.path.join(output_dir, 'svm_model_jsonl.pkl')

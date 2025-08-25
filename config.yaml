@@ -66,14 +66,35 @@ svm_classifier:
   jsonl_input_dir: ./output/pe_static_features/pe_metadata
   # 模型输出目录
   jsonl_output_dir: ./output/model/svm_model_jsonl
-  # 数据划分与随机种子
+  # ====== 划分与随机数 ======
   test_size: 0.2
+  val_size: 0.2
   random_state: 42
   # SVM 超参数
   C: 1.0
-  max_iter: 2000
-  class_weight: balanced
+  max_iter: 200
   kernel: linear
+  # ====== MLP 超参 ======
+  hidden_layer_sizes: [256, 128]   # 可调：如 [512,256,128]
+  activation: relu                 # relu | tanh | logistic | identity
+  solver: adam                     # adam | sgd | lbfgs
+  alpha: 0.0001                    # L2 正则
+  max_iter: 200
+  batch_size: auto
+  learning_rate: adaptive          # constant | invscaling | adaptive
+  learning_rate_init: 0.001
+  early_stopping: true             # 内部早停（会从训练集中再切一部分作为内部验证）
+  validation_fraction: 0.1         # 仅在 early_stopping: true 时有效
+  n_iter_no_change: 10
+  tol: 0.0001
+  shuffle: true
+  beta_1: 0.9
+  beta_2: 0.999
+  epsilon: 1e-8
+  # ====== 类不平衡处理 ======
+  class_weight: balanced           # balanced | null
+  # ====== 阈值调优策略（验证集） ======
+  threshold_strategy: f1           # f1 | youden | pr_auc_hold
 
 mlp_classifier:
   pic_input_dir: ./output/three_gram_byte_plot #输入目录

@@ -1,177 +1,208 @@
 import os
 import json
-import glob
 import numpy as np
-from typing import List, Dict, Any, Tuple
+from typing import Dict, Any
 
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import (classification_report, confusion_matrix,
+                             roc_auc_score, average_precision_score,
+                             precision_recall_curve, f1_score)
+from sklearn.utils.class_weight import compute_sample_weight
 import joblib
 
 import Utils
 
-# =========================
 # 加载配置 & 路径
-# =========================
 config = Utils.load_config()
+cfg = config.get('mlp_classifier_jsonl', {})
 
-pe_meta_dir  = config['mlp_classifier_jsonl']['input_dir']
-output_dir   = config['mlp_classifier_jsonl']['output_dir']
+pe_meta_dir   = cfg.get('input_dir')
+output_dir    = cfg.get('output_dir', './output/model/mlp_model_jsonl')
 Utils.check_directory_exists(output_dir)
-model_path   = os.path.join(output_dir, 'mlp_model_jsonl.pkl')
 
-# 评估/随机种子/模型超参
-test_size     = config['mlp_classifier_jsonl']['test_size']
-random_state  = config['mlp_classifier_jsonl']['random_state']
-hidden_sizes  = tuple(config['mlp_classifier_jsonl'].get('hidden_layer_sizes', [256, 128]))
-max_iter      = config['mlp_classifier_jsonl'].get('max_iter', 200)
-alpha         = config['mlp_classifier_jsonl'].get('alpha', 1e-4)
-early_stopping= config['mlp_classifier_jsonl'].get('early_stopping', True)
-validation_fraction = config['mlp_classifier_jsonl'].get('validation_fraction', 0.1)
-learning_rate = config['mlp_classifier_jsonl'].get('learning_rate', 'adaptive')
+model_path    = os.path.join(output_dir, 'mlp_model_jsonl.pkl')
+metrics_path  = os.path.join(output_dir, 'mlp_metrics.json')
+losscurve_csv = os.path.join(output_dir, 'mlp_loss_curve.csv')
 
-# =========================
-# 特征工程（与其它模型一致）
-# =========================
-def _safe_get(d: Dict[str, Any], key: str, default=0):
-    v = d.get(key, default)
-    if isinstance(v, bool): return int(v)
-    if v is None: return default
-    return v
+# 划分 & 随机数
+test_size     = float(cfg.get('test_size', 0.2))
+val_size      = float(cfg.get('val_size', 0.2))  # 在 train 内再切 val
+random_state  = int(cfg.get('random_state', 42))
 
-def extract_feature_vector(sample: Dict[str, Any]) -> Tuple[np.ndarray, int]:
-    y = int(_safe_get(sample, "label", 0))
+# MLP 超参（与 config.yaml 一一对应）
+hidden_layer_sizes = tuple(cfg.get('hidden_layer_sizes', [256, 128]))
+activation   = cfg.get('activation', 'relu')   # 'relu' | 'tanh' | 'logistic' | 'identity'
+solver       = cfg.get('solver', 'adam')       # 'adam' | 'sgd' | 'lbfgs'
+alpha        = float(cfg.get('alpha', 1e-4))
+max_iter     = int(cfg.get('max_iter', 200))
+batch_size   = cfg.get('batch_size', 'auto')   # 'auto' 或 正整数
+learning_rate = cfg.get('learning_rate', 'adaptive')  # 'constant' | 'invscaling' | 'adaptive'
+learning_rate_init = float(cfg.get('learning_rate_init', 0.001))
+early_stopping = bool(cfg.get('early_stopping', True))
+validation_fraction = float(cfg.get('validation_fraction', 0.1))
+n_iter_no_change = int(cfg.get('n_iter_no_change', 10))
+tol          = float(cfg.get('tol', 1e-4))
+shuffle      = bool(cfg.get('shuffle', True))
+beta_1       = float(cfg.get('beta_1', 0.9))
+beta_2       = float(cfg.get('beta_2', 0.999))
+epsilon      = float(cfg.get('epsilon', 1e-8))
 
-    hist = sample.get("histogram", [0]*256)
-    hist = (hist[:256] + [0]*256)[:256]
+# 类不平衡策略：'balanced' | None
+class_weight_mode = cfg.get('class_weight', 'balanced')
 
-    byteent = sample.get("byteentropy", [0]*(16*16))
-    byteent = (byteent[:256] + [0]*256)[:256]
+# 阈值调优策略：'f1' | 'youden' | 'pr_auc_hold'
+threshold_strategy = cfg.get('threshold_strategy', 'f1')
 
-    s = sample.get("strings", {})
-    strings_feats = [
-        float(_safe_get(s, "numstrings", 0)),
-        float(_safe_get(s, "avlength", 0.0)),
-        float(_safe_get(s, "printables", 0)),
-        float(_safe_get(s, "entropy", 0.0)),
-        float(_safe_get(s, "paths", 0)),
-        float(_safe_get(s, "urls", 0)),
-        float(_safe_get(s, "registry", 0)),
-        float(_safe_get(s, "MZ", 0)),
-    ]
+# 阈值调优
+def best_threshold_by_strategy(y_true, prob, strategy: str = 'f1') -> float:
+    if strategy == 'pr_auc_hold':
+        return 0.5
+    candidates = np.linspace(0.01, 0.99, 99)
+    if strategy == 'youden':
+        # 简化用 F1 近似（或可实现 TPR-FPR 扫描）
+        scores = [f1_score(y_true, (prob >= t).astype(int), zero_division=0) for t in candidates]
+        return float(candidates[int(np.argmax(scores))])
+    # 默认：最大化 F1
+    scores = [f1_score(y_true, (prob >= t).astype(int), zero_division=0) for t in candidates]
+    return float(candidates[int(np.argmax(scores))])
 
-    g = sample.get("general", {})
-    general_feats = [
-        float(_safe_get(g, "size", 0)),
-        float(_safe_get(g, "vsize", 0)),
-        float(_safe_get(g, "has_debug", 0)),
-        float(_safe_get(g, "exports", 0)),
-        float(_safe_get(g, "imports", 0)),
-        float(_safe_get(g, "has_relocations", 0)),
-        float(_safe_get(g, "has_resources", 0)),
-        float(_safe_get(g, "has_signature", 0)),
-        float(_safe_get(g, "has_tls", 0)),
-        float(_safe_get(g, "symbols", 0)),
-    ]
-
-    vec = np.array(hist + byteent + strings_feats + general_feats, dtype=np.float32)
-    return vec, y
-
-def feature_names() -> List[str]:
-    names = []
-    names += [f"hist_{i}" for i in range(256)]
-    names += [f"byteent_{i}" for i in range(256)]
-    names += ["str_numstrings","str_avlength","str_printables","str_entropy",
-              "str_paths","str_urls","str_registry","str_MZ"]
-    names += ["gen_size","gen_vsize","gen_has_debug","gen_exports","gen_imports",
-              "gen_has_relocations","gen_has_resources","gen_has_signature","gen_has_tls","gen_symbols"]
-    return names  # 530
-
-# =========================
-# 数据加载
-# =========================
-def load_dataset_from_jsonl_dir(root_dir: str) -> Tuple[np.ndarray, np.ndarray]:
-    jsonl_files = glob.glob(os.path.join(root_dir, "**", "*.jsonl"), recursive=True)
-    if not jsonl_files:
-        raise RuntimeError(f"No jsonl files found under: {root_dir}")
-
-    X_list, y_list, bad = [], [], 0
-    for fp in jsonl_files:
-        with open(fp, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line: continue
-                try:
-                    obj = json.loads(line)
-                    vec, lab = extract_feature_vector(obj)
-                    X_list.append(vec); y_list.append(lab)
-                except Exception:
-                    bad += 1
-                    continue
-
-    if not X_list:
-        raise RuntimeError(f"All jsonl lines failed to parse under: {root_dir}")
-
-    X = np.vstack(X_list)
-    y = np.array(y_list, dtype=np.int64)
-    print(f"[DATA] samples={len(y)} | bad_lines={bad} | pos={y.sum()} | neg={len(y)-y.sum()}")
-    return X, y
-
-# =========================
 # 训练与保存
-# =========================
 def main():
-    print(f"[INFO] Loading JSONL from: {pe_meta_dir}")
-    X, y = load_dataset_from_jsonl_dir(pe_meta_dir)
 
-    X_train, X_test, y_train, y_test = train_test_split(
+    print(f"[INFO] Loading JSONL from: {pe_meta_dir}")
+    # ★ 复用 Utils：避免重复代码
+    X, y = Utils.load_dataset_from_jsonl_dir(pe_meta_dir)
+    feat_names = Utils.feature_names()
+
+    # 三段划分
+    X_train_all, X_test, y_train_all, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state, stratify=y
     )
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train_all, y_train_all, test_size=val_size, random_state=random_state, stratify=y_train_all
+    )
 
-    mlp_pipeline = Pipeline([
-        ('scaler', StandardScaler()),
-        ('mlp', MLPClassifier(hidden_layer_sizes=hidden_sizes,
-                              activation='relu',
-                              solver='adam',
-                              alpha=alpha,
-                              max_iter=max_iter,
-                              random_state=random_state,
-                              early_stopping=early_stopping,
-                              validation_fraction=validation_fraction,
-                              learning_rate=learning_rate,
-                              verbose=False))
+    # 类不平衡 → sample_weight（仅用于训练集）
+    if class_weight_mode == 'balanced':
+        sample_weight = compute_sample_weight(class_weight='balanced', y=y_train)
+    else:
+        sample_weight = None
+
+    # 流水线：缺失值兜底 + 标准化 + MLP
+    mlp_pipe = Pipeline([
+        ('imp', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler(with_mean=True, with_std=True)),
+        ('mlp', MLPClassifier(
+            hidden_layer_sizes=hidden_layer_sizes,
+            activation=activation,
+            solver=solver,
+            alpha=alpha,
+            batch_size=batch_size,
+            learning_rate=learning_rate,
+            learning_rate_init=learning_rate_init,
+            max_iter=max_iter,
+            early_stopping=early_stopping,            # 内部会再切出一部分 val（用于早停）
+            validation_fraction=validation_fraction,  # 仅在 early_stopping=True 时使用
+            n_iter_no_change=n_iter_no_change,
+            tol=tol,
+            shuffle=shuffle,
+            random_state=random_state,
+            beta_1=beta_1, beta_2=beta_2, epsilon=epsilon,
+            verbose=False
+        ))
     ])
 
-    mlp_pipeline.fit(X_train, y_train)
+    # 训练
+    mlp_pipe.fit(X_train, y_train,
+                 **({'mlp__sample_weight': sample_weight} if sample_weight is not None else {}))
 
-    y_pred = mlp_pipeline.predict(X_test)
-    print("\n[Confusion Matrix]")
-    print(confusion_matrix(y_test, y_pred, labels=[0, 1]))
-    print("\n[Classification Report]")
-    print(classification_report(y_test, y_pred, labels=[0, 1], target_names=["Benign","Malware"]))
+    # 验证集阈值调优（使用 predict_proba）
+    y_val_prob = mlp_pipe.predict_proba(X_val)[:, 1]
+    best_thr = best_threshold_by_strategy(y_val, y_val_prob, threshold_strategy)
 
+    # 测试集评估
+    y_test_prob = mlp_pipe.predict_proba(X_test)[:, 1]
+    y_test_pred = (y_test_prob >= best_thr).astype(int)
+
+    cm = confusion_matrix(y_test, y_test_pred, labels=[0, 1])
+    report = classification_report(y_test, y_test_pred, labels=[0, 1],
+                                   target_names=["Benign", "Malware"], zero_division=0)
+    try:
+        roc = roc_auc_score(y_test, y_test_prob)
+    except Exception:
+        roc = None
+    try:
+        pr_auc = average_precision_score(y_test, y_test_prob)
+    except Exception:
+        pr_auc = None
+
+    print("\n[Confusion Matrix] labels=[0,1]\n", cm)
+    print("\n[Classification Report]\n", report)
+    print(f"[ROC-AUC] {roc:.4f}" if roc is not None else "[ROC-AUC] N/A")
+    print(f"[PR-AUC ] {pr_auc:.4f}" if pr_auc is not None else "[PR-AUC ] N/A")
+
+    # 保存模型（含流水线 + 阈值）
     payload = {
-        "model": mlp_pipeline,
-        "feature_names": feature_names(),
+        "pipeline": mlp_pipe,
+        "feature_names": feat_names,
         "meta": {
-            "version": "mlp_from_jsonl_v1",
-            "feature_dim": X.shape[1],
-            "test_size": test_size,
-            "random_state": random_state,
-            "hidden_layer_sizes": hidden_sizes,
-            "max_iter": max_iter,
-            "alpha": alpha,
-            "early_stopping": early_stopping,
-            "validation_fraction": validation_fraction,
-            "learning_rate": learning_rate
+            "version": "mlp_from_jsonl_v2",
+            "feature_dim": int(X.shape[1]),
+            "test_size": float(test_size),
+            "val_size": float(val_size),
+            "random_state": int(random_state),
+            "hidden_layer_sizes": list(hidden_layer_sizes),
+            "activation": activation,
+            "solver": solver,
+            "alpha": float(alpha),
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
+            "learning_rate_init": float(learning_rate_init),
+            "max_iter": int(max_iter),
+            "early_stopping": bool(early_stopping),
+            "validation_fraction": float(validation_fraction),
+            "n_iter_no_change": int(n_iter_no_change),
+            "tol": float(tol),
+            "shuffle": bool(shuffle),
+            "class_weight": class_weight_mode,
+            "best_threshold": float(best_thr),
+            "threshold_strategy": threshold_strategy
         }
     }
-    joblib.dump(payload, model_path)
+    joblib.dump(payload, model_path, compress=3)
     print(f"[SAVE] model -> {model_path}")
+
+    # 保存评估指标到 JSON
+    metrics = {
+        "confusion_matrix": cm.tolist(),
+        "classification_report": report,
+        "roc_auc": roc,
+        "pr_auc": pr_auc,
+        "best_threshold": float(best_thr),
+        "threshold_strategy": threshold_strategy,
+        "pos_rate_test": float(np.mean(y_test)),
+        "pos_rate_train": float(np.mean(y_train_all))
+    }
+    with open(metrics_path, "w", encoding="utf-8") as f:
+        json.dump(metrics, f, indent=2, ensure_ascii=False)
+    print(f"[SAVE] metrics -> {metrics_path}")
+
+    # 训练曲线落盘（若可用）
+    try:
+        mlp = mlp_pipe.named_steps['mlp']
+        if getattr(mlp, "loss_curve_", None) is not None:
+            with open(losscurve_csv, "w", encoding="utf-8") as f:
+                f.write("epoch,loss\n")
+                for i, loss in enumerate(mlp.loss_curve_, 1):
+                    f.write(f"{i},{loss}\n")
+            print(f"[SAVE] loss curve -> {losscurve_csv}")
+    except Exception as e:
+        print(f"[WARN] save loss curve failed: {e}")
 
 if __name__ == "__main__":
     main()
-    Utils.notice_ntfy('MLP模型（JSONL）训练完毕！')
+    Utils.notice_ntfy('MLP 模型（JSONL）训练完毕！（含缺失值兜底 & 类权重 & 阈值调优 & 指标/曲线落盘）')
