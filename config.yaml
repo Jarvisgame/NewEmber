@@ -129,21 +129,36 @@ cnn_classifier:
 ensemble_classifier:
   pic_input_dir: ./output/three_gram_byte_plot
   pic_output_dir: ./output/model/ensemble_model
-  test_size: 0.2
-  random_state: 42
   jsonl_input_dir: ./output/pe_static_features/pe_metadata
   jsonl_output_dir: ./output/model/ensemble_model_jsonl
-  
+  # ====== 划分与随机数 ======
+  test_size: 0.2
+  val_size: 0.2
+  random_state: 42
+  # ====== 阈值调优 ======
+  # f1：最大化 F1；youden：近似 Youden；pr_auc_hold：固定 0.5 仅评估 PR-AUC
+  threshold_strategy: f1
+
+  # ====== Voting 权重（对应 [rf, svm, mlp]）======
+  voting_weights: [2, 1, 1]
+
   rf:
     n_estimators: 300
     max_depth:
+    max_features: sqrt
+    min_samples_leaf: 1
     n_jobs: -1
     class_weight: balanced_subsample
+    bootstrap: true
+    criterion: gini
 
   svm:
+    kernel: linear          # linear | rbf
     C: 1.0
+    gamma: scale            # 仅 rbf 有效
     max_iter: 2000
     class_weight: balanced
+    cache_size_mb: 1024
 
   mlp:
     hidden_layer_sizes: [256, 128]
@@ -151,4 +166,6 @@ ensemble_classifier:
     alpha: 0.0001
     early_stopping: true
     validation_fraction: 0.1
-    learning_rate: adaptive  
+    learning_rate: adaptive
+    batch_size: auto
+    learning_rate_init: 0.001

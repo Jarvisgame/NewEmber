@@ -41,6 +41,15 @@ def main():
         X_train_all, y_train_all, test_size=val_size, random_state=random_state, stratify=y_train_all
     )
 
+    y_train_all = np.asarray(y_train_all).ravel()
+    y_train     = np.asarray(y_train).ravel()
+    y_val       = np.asarray(y_val).ravel()
+    y_test      = np.asarray(y_test).ravel()
+
+    # 同时也把概率向量确保为一维（通常本来就是）
+    y_val_prob  = np.asarray(y_val_prob).ravel()
+    y_test_prob = np.asarray(y_test_prob).ravel()
+
     # 3. 基线流水线：Imputer + DecisionTree
     def make_pipeline(ccp_alpha=0.0, max_depth=None):
         return Pipeline([
@@ -117,4 +126,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    Utils.notice_ntfy('决策树模型（JSONL）训练完毕！')
+    Utils.notice_bark('决策树模型（JSONL）训练完毕！')
