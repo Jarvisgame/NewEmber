@@ -24,7 +24,6 @@ decision_tree_classifier:
   test_size: 0.2 # 测试集比例
   random_state: 42 # 随机种子
   val_size: 0.1 # 验证集比例
-
   
 random_forest_classifier:
   pic_input_dir: ./output/three_gram_byte_plot #输入目录
@@ -35,11 +34,30 @@ random_forest_classifier:
   jsonl_output_dir: ./output/model/rf_model_jsonl
   # 数据划分与随机种子
   test_size: 0.2
+  val_size: 0.2
   random_state: 42
-  # 随机森林超参数（可按需调整）
+  # 森林中树的数量（一般 300~1000；更大更稳但更慢）
   n_estimators: 300
+  # 树最大深度；null 表示不限制（更容易过拟合）。建议先 null，再看验证集表现
   max_depth:
+  # 并行线程；-1 使用全部核心
   n_jobs: -1
+  # 类不平衡处理：balanced_subsample | balanced | null
+  class_weight: balanced_subsample
+  # 每次分裂可用特征数：sqrt（高维较稳）| log2 | null(=全部)
+  max_features: sqrt
+  # 叶子节点最小样本数（>1 可抑制过拟合）
+  min_samples_leaf: 1
+  # 是否自助采样（袋外评估需为 true）
+  bootstrap: true
+  # 是否启用袋外评估（仅在 bootstrap: true 时有效）
+  oob_score: false
+  # 不纯度准则：gini | entropy | log_loss
+  criterion: gini
+
+  # f1：最大化 F1；youden：近似最大化 Youden 思路；pr_auc_hold：固定 0.5，仅计算 PR-AUC
+  threshold_strategy: f1
+
 
 svm_classifier:
   pic_input_dir: ./output/three_gram_byte_plot #输入目录
