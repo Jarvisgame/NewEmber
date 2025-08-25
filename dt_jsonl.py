@@ -31,8 +31,13 @@ def main():
     print(f"[INFO] Loading JSONL from: {pe_meta_dir}")
     # 要求 Utils.load_dataset_from_jsonl_dir 返回 (X: np.ndarray, y: np.ndarray)
     X, y = Utils.load_dataset_from_jsonl_dir(pe_meta_dir)
-    y_bin = np.where(y == 1, 1, 0).astype(int) # 忽略掉label作为-1的情况
-    feat_names = Utils.feature_names()  # 保证与 X 列顺序一致
+    mask = (y != -1)
+    X = X[mask]
+    y = y[mask]
+
+    # 二值化（0=良性, 1=恶意）
+    y_bin = (y == 1).astype(int)
+    feat_names = Utils.feature_names()
 
     # 2. 划分训练集与测试集
     
