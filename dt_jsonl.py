@@ -31,11 +31,13 @@ def main():
     print(f"[INFO] Loading JSONL from: {pe_meta_dir}")
     # 要求 Utils.load_dataset_from_jsonl_dir 返回 (X: np.ndarray, y: np.ndarray)
     X, y = Utils.load_dataset_from_jsonl_dir(pe_meta_dir)
+    y_bin = np.where(y == 1, 1, 0).astype(int) # 忽略掉label作为-1的情况
     feat_names = Utils.feature_names()  # 保证与 X 列顺序一致
 
     # 2. 划分训练集与测试集
+    
     X_train_all, X_test, y_train_all, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state, stratify=y
+        X, y, test_size=test_size, random_state=random_state, stratify=y_bin
     )
     X_train, X_val, y_train, y_val = train_test_split(
         X_train_all, y_train_all, test_size=val_size, random_state=random_state, stratify=y_train_all
